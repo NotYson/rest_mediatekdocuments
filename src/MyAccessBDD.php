@@ -40,6 +40,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->selectAllRevues();
             case "exemplaire" :
                 return $this->selectExemplairesRevue($champs);
+            case "commandedocument" :
+                return $this->selectCommandesLivreDvd($champs);
             case "genre" :
             case "public" :
             case "rayon" :
@@ -69,6 +71,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->insertDvd($champs);
             case "revue" :
                 return $this->insertRevue($champs);
+            case "commandedocument" :
+                return $this->insertCommande($champs);
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -93,6 +97,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->updateDvd($id, $champs);
             case "revue" :
                 return $this->updateRevue($id, $champs);
+            case "commandedocument" :
+                return $this->updateStatutCommande($id, $champs);
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -116,6 +122,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->deleteDvd($champs);
             case "revue" :
                 return $this->deleteRevue($champs);
+            case "commandedocument" :
+                return $this->deleteCommande($champs);
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -406,6 +414,155 @@ class MyAccessBDD extends AccessBDD {
         $this->conn->beginTransaction();
         $ok = $this->updateOneTupleOneTable('document', $id, $champsDocument) !== null
            && $this->updateOneTupleOneTable('revue',    $id, $champsRevue)    !== null;
+        if ($ok) {
+            $this->conn->commit();
+            return 1;
+        }
+        $this->conn->rollback();
+        return null;
+    }
+
+    /**
+     * récupère les commandes d'un livre ou DVD avec jointure sur commande
+     * @param array|null $champs peut contenir 'idLivreDvd' pour filtrer
+     * @return array|null
+     */
+    private function selectCommandesLivreDvd(?array $champs) : ?array {
+        $requete = "select cd.id, cd.nbExemplaire, cd.idLivreDvd, c.dateCommande, c.montant, c.statut ";
+        $requete .= "from commandedocument cd join commande c on cd.id=c.id ";
+        if (!empty($champs) && array_key_exists('idLivreDvd', $champs)) {
+            $requete .= "where cd.idLivreDvd=:idLivreDvd ";
+            $requete .= "order by c.dateCommande DESC";
+            return $this->conn->queryBDD($requete, ['idLivreDvd' => $champs['idLivreDvd']]);
+        }
+        $requete .= "order by c.dateCommande DESC";
+        return $this->conn->queryBDD($requete);
+    }
+
+    /**
+     * ajoute une commande (commande + commandedocument) dans une transaction
+     * le statut est initialisé à "en cours"
+     * @param array|null $champs id, dateCommande, montant, nbExemplaire, idLivreDvd
+     * @return int|null 1 si succès, null si erreur
+     */
+    private function insertCommande(?array $champs) : ?int {
+        if (empty($champs)) {
+            return null;
+        }
+        $champsCommande = array_intersect_key($champs, array_flip(['id', 'dateCommande', 'montant']));
+        $champsCommande['statut'] = 'en cours';
+        $champsCmdDoc = array_intersect_key($champs, array_flip(['id', 'nbExemplaire', 'idLivreDvd']));
+        $this->conn->beginTransaction();
+        $ok = $this->insertOneTupleOneTable('commande',         $champsCommande) !== null
+           && $this->insertOneTupleOneTable('commandedocument', $champsCmdDoc)   !== null;
+        if ($ok) {
+            $this->conn->commit();
+            return 1;
+        }
+        $this->conn->rollback();
+        return null;
+    }
+
+    /**
+     * modifie le statut d'une commande
+     * si le statut passe à "livrée" pour la première fois, génère automatiquement les exemplaires
+     * @param string|null $id
+     * @param array|null $champs doit contenir 'statut'
+     * @return int|null 1 si succès, null si erreur
+     */
+    private function updateStatutCommande(?string $id, ?array $champs) : ?int {
+        if (empty($champs) || is_null($id)) {
+            return null;
+        }
+        $nouveauStatut = $champs['statut'] ?? null;
+        if (is_null($nouveauStatut)) {
+            return null;
+        }
+        $statutActuel = $this->conn->queryBDD("select statut from commande where id=:id;", ['id' => $id]);
+        if ($statutActuel === null || empty($statutActuel)) {
+            return null;
+        }
+        $this->conn->beginTransaction();
+        $result = $this->updateOneTupleOneTable('commande', $id, ['statut' => $nouveauStatut]);
+        if ($result === null) {
+            $this->conn->rollback();
+            return null;
+        }
+        if ($nouveauStatut === 'livrée' && $statutActuel[0]['statut'] !== 'livrée') {
+            if ($this->genererExemplaires($id) === null) {
+                $this->conn->rollback();
+                return null;
+            }
+        }
+        $this->conn->commit();
+        return $result;
+    }
+
+    /**
+     * génère les exemplaires lors du passage au statut "livrée"
+     * les numéros sont séquentiels par rapport aux exemplaires existants en base
+     * @param string $idCommande
+     * @return int|null nombre d'exemplaires créés ou null si erreur
+     */
+    private function genererExemplaires(string $idCommande) : ?int {
+        $cd = $this->conn->queryBDD(
+            "select nbExemplaire, idLivreDvd from commandedocument where id=:id;",
+            ['id' => $idCommande]
+        );
+        if ($cd === null || empty($cd)) {
+            return null;
+        }
+        $nbExemplaire = (int)$cd[0]['nbExemplaire'];
+        $idLivreDvd   = $cd[0]['idLivreDvd'];
+        $maxRes = $this->conn->queryBDD(
+            "select coalesce(max(numero), 0) as maxNum from exemplaire where id=:id;",
+            ['id' => $idLivreDvd]
+        );
+        if ($maxRes === null) {
+            return null;
+        }
+        $maxNum = (int)$maxRes[0]['maxNum'];
+        for ($i = 1; $i <= $nbExemplaire; $i++) {
+            $champsEx = [
+                'id'        => $idLivreDvd,
+                'numero'    => $maxNum + $i,
+                'dateAchat' => date('Y-m-d'),
+                'photo'     => '',
+                'idEtat'    => '00001'
+            ];
+            if ($this->insertOneTupleOneTable('exemplaire', $champsEx) === null) {
+                return null;
+            }
+        }
+        return $nbExemplaire;
+    }
+
+    /**
+     * supprime une commande (commandedocument → commande) dans une transaction
+     * lève une exception si le statut n'est pas "en cours" ou "relancée"
+     * @param array|null $champs doit contenir 'id'
+     * @return int|null 1 si succès, null si erreur
+     */
+    private function deleteCommande(?array $champs) : ?int {
+        if (empty($champs)) {
+            return null;
+        }
+        $id = $champs['id'] ?? null;
+        if (is_null($id)) {
+            return null;
+        }
+        $result = $this->conn->queryBDD("select statut from commande where id=:id;", ['id' => $id]);
+        if ($result === null || empty($result)) {
+            return null;
+        }
+        $statut = $result[0]['statut'];
+        if ($statut !== 'en cours' && $statut !== 'relancée') {
+            throw new \Exception("Suppression impossible : la commande a le statut \"$statut\".");
+        }
+        $param = ['id' => $id];
+        $this->conn->beginTransaction();
+        $ok = $this->deleteTuplesOneTable('commandedocument', $param) !== null
+           && $this->deleteTuplesOneTable('commande',         $param) !== null;
         if ($ok) {
             $this->conn->commit();
             return 1;
