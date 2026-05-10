@@ -93,6 +93,27 @@ class Connexion {
     }
 	
     /**
+     * démarre une transaction
+     */
+    public function beginTransaction(): void {
+        $this->conn->beginTransaction();
+    }
+
+    /**
+     * valide la transaction en cours
+     */
+    public function commit(): void {
+        $this->conn->commit();
+    }
+
+    /**
+     * annule la transaction en cours
+     */
+    public function rollback(): void {
+        $this->conn->rollback();
+    }
+
+    /**
      * prépare la requête
      * @param string $requete
      * @param array|null $param
