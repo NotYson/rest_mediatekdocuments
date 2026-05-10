@@ -42,6 +42,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->selectExemplairesRevue($champs);
             case "commandedocument" :
                 return $this->selectCommandesLivreDvd($champs);
+            case "abonnement" :
+                return $this->selectAbonnements($champs);
             case "genre" :
             case "public" :
             case "rayon" :
@@ -73,6 +75,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->insertRevue($champs);
             case "commandedocument" :
                 return $this->insertCommande($champs);
+            case "abonnement" :
+                return $this->insertAbonnement($champs);
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -124,6 +128,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->deleteRevue($champs);
             case "commandedocument" :
                 return $this->deleteCommande($champs);
+            case "abonnement" :
+                return $this->deleteAbonnement($champs);
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -535,6 +541,92 @@ class MyAccessBDD extends AccessBDD {
             }
         }
         return $nbExemplaire;
+    }
+
+    /**
+     * récupère les abonnements avec jointure sur commande
+     * - sans champs : tous les abonnements (y compris expirés)
+     * - champs['idRevue'] : abonnements d'une revue donnée
+     * - champs['expireBientot'] : abonnements dont la fin est dans les 30 prochains jours
+     * @param array|null $champs
+     * @return array|null
+     */
+    private function selectAbonnements(?array $champs) : ?array {
+        $requete = "select a.id, a.idRevue, a.dateFinAbonnement, c.dateCommande, c.montant ";
+        $requete .= "from abonnement a join commande c on a.id=c.id ";
+        if (!empty($champs) && array_key_exists('idRevue', $champs)) {
+            $requete .= "where a.idRevue=:idRevue ";
+            $requete .= "order by a.dateFinAbonnement DESC";
+            return $this->conn->queryBDD($requete, ['idRevue' => $champs['idRevue']]);
+        }
+        if (!empty($champs) && array_key_exists('expireBientot', $champs)) {
+            $requete .= "where a.dateFinAbonnement between curdate() and date_add(curdate(), interval 30 day) ";
+            $requete .= "order by a.dateFinAbonnement ASC";
+            return $this->conn->queryBDD($requete);
+        }
+        $requete .= "order by a.dateFinAbonnement DESC";
+        return $this->conn->queryBDD($requete);
+    }
+
+    /**
+     * ajoute un abonnement (commande + abonnement) dans une transaction
+     * @param array|null $champs id, dateCommande, montant, dateFinAbonnement, idRevue
+     * @return int|null 1 si succès, null si erreur
+     */
+    private function insertAbonnement(?array $champs) : ?int {
+        if (empty($champs)) {
+            return null;
+        }
+        $champsCommande = array_intersect_key($champs, array_flip(['id', 'dateCommande', 'montant']));
+        $champsCommande['statut'] = 'en cours';
+        $champsAbonnement = array_intersect_key($champs, array_flip(['id', 'dateFinAbonnement', 'idRevue']));
+        $this->conn->beginTransaction();
+        $ok = $this->insertOneTupleOneTable('commande',   $champsCommande)   !== null
+           && $this->insertOneTupleOneTable('abonnement', $champsAbonnement) !== null;
+        if ($ok) {
+            $this->conn->commit();
+            return 1;
+        }
+        $this->conn->rollback();
+        return null;
+    }
+
+    /**
+     * supprime un abonnement (abonnement → commande) dans une transaction
+     * lève une exception si des parutions (exemplaires) existent pour la revue concernée
+     * @param array|null $champs doit contenir 'id'
+     * @return int|null 1 si succès, null si erreur
+     */
+    private function deleteAbonnement(?array $champs) : ?int {
+        if (empty($champs)) {
+            return null;
+        }
+        $id = $champs['id'] ?? null;
+        if (is_null($id)) {
+            return null;
+        }
+        $abo = $this->conn->queryBDD("select idRevue from abonnement where id=:id;", ['id' => $id]);
+        if ($abo === null || empty($abo)) {
+            return null;
+        }
+        $idRevue = $abo[0]['idRevue'];
+        $result = $this->conn->queryBDD("select count(*) as nb from exemplaire where id=:id;", ['id' => $idRevue]);
+        if ($result === null) {
+            return null;
+        }
+        if ((int)$result[0]['nb'] > 0) {
+            throw new \Exception("Suppression impossible : des parutions existent pour cet abonnement.");
+        }
+        $param = ['id' => $id];
+        $this->conn->beginTransaction();
+        $ok = $this->deleteTuplesOneTable('abonnement', $param) !== null
+           && $this->deleteTuplesOneTable('commande',   $param) !== null;
+        if ($ok) {
+            $this->conn->commit();
+            return 1;
+        }
+        $this->conn->rollback();
+        return null;
     }
 
     /**
