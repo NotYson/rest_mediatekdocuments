@@ -103,6 +103,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->updateRevue($id, $champs);
             case "commandedocument" :
                 return $this->updateStatutCommande($id, $champs);
+            case "exemplaire" :
+                return $this->updateEtatExemplaire($id, $champs);
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -130,6 +132,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->deleteCommande($champs);
             case "abonnement" :
                 return $this->deleteAbonnement($champs);
+            case "exemplaire" :
+                return $this->deleteExemplaire($champs);
             case "" :
                 // return $this->uneFonction(parametres);
             default:
@@ -783,6 +787,58 @@ class MyAccessBDD extends AccessBDD {
         }
         $this->conn->rollback();
         return null;
+    }
+
+    /**
+     * modifie l'état d'un exemplaire identifié par son id de document et son numéro
+     * valide idEtat par liste blanche ; lève une exception si l'état ou l'exemplaire est invalide
+     * @param string|null $id id du document (livre, dvd ou revue)
+     * @param array|null $champs doit contenir 'numero' et 'idEtat'
+     * @return int|null nombre de lignes modifiées ou null si erreur
+     */
+    private function updateEtatExemplaire(?string $id, ?array $champs) : ?int {
+        if (empty($champs) || is_null($id)) {
+            return null;
+        }
+        $idEtat = $champs['idEtat'] ?? null;
+        $numero = $champs['numero'] ?? null;
+        if (is_null($idEtat) || is_null($numero)) {
+            return null;
+        }
+        // liste blanche des états autorisés (00001=neuf, 00002=usagé, 00003=détérioré, 00004=inutilisable)
+        $etatsAutorises = ['00001', '00002', '00003', '00004'];
+        if (!in_array($idEtat, $etatsAutorises, true)) {
+            throw new \Exception("État invalide : la valeur \"$idEtat\" n'est pas autorisée.");
+        }
+        $result = $this->conn->queryBDD(
+            "select count(*) as nb from exemplaire where id=:id and numero=:numero;",
+            ['id' => $id, 'numero' => $numero]
+        );
+        if ($result === null) {
+            return null;
+        }
+        if ((int)$result[0]['nb'] === 0) {
+            throw new \Exception("Exemplaire introuvable : aucun exemplaire avec cet identifiant et ce numéro.");
+        }
+        $requete = "update exemplaire set idEtat=:idEtat where id=:id and numero=:numero;";
+        return $this->conn->updateBDD($requete, ['idEtat' => $idEtat, 'id' => $id, 'numero' => $numero]);
+    }
+
+    /**
+     * supprime un exemplaire identifié par son id de document et son numéro
+     * la suppression est autorisée quel que soit l'état de l'exemplaire
+     * @param array|null $champs doit contenir 'id' et 'numero'
+     * @return int|null nombre de lignes supprimées ou null si erreur
+     */
+    private function deleteExemplaire(?array $champs) : ?int {
+        if (empty($champs)) {
+            return null;
+        }
+        $param = array_intersect_key($champs, array_flip(['id', 'numero']));
+        if (count($param) < 2) {
+            return null;
+        }
+        return $this->deleteTuplesOneTable('exemplaire', $param);
     }
 
     /**
