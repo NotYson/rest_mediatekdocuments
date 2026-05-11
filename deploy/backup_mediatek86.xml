@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+  Planificateur de tâches Windows — Sauvegarde quotidienne Mediatek86
+  =====================================================================
+  AVANT IMPORT :
+    Remplacer C:\chemin\vers\deploy\backup_db.bat par le chemin réel du script.
+
+  IMPORT (ligne de commande, en tant qu'administrateur) :
+    schtasks /Create /XML "backup_mediatek86.xml" /TN "Mediatek86\Backup quotidien"
+
+  SUPPRESSION :
+    schtasks /Delete /TN "Mediatek86\Backup quotidien" /F
+-->
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>Sauvegarde quotidienne de la base MySQL mediatek86 avec rotation automatique.</Description>
+    <Author>Mediatek86</Author>
+  </RegistrationInfo>
+
+  <Triggers>
+    <CalendarTrigger>
+      <!-- Déclenchement tous les jours à 02h00 -->
+      <StartBoundary>2026-01-01T02:00:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+
+  <Principals>
+    <Principal id="Author">
+      <!-- Exécution sous le compte SYSTEM (accès MySQL local garanti) -->
+      <UserId>S-1-5-18</UserId>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
+    <!-- Abandon si la tâche dure plus d'une heure (protection contre blocage) -->
+    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+
+  <Actions Context="Author">
+    <Exec>
+      <!--
+        REMPLACER le chemin ci-dessous par le chemin réel de backup_db.bat
+        Exemple : C:\Mediatek86\deploy\backup_db.bat
+      -->
+      <Command>C:\chemin\vers\deploy\backup_db.bat</Command>
+    </Exec>
+  </Actions>
+</Task>
