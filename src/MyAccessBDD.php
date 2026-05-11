@@ -703,38 +703,7 @@ class MyAccessBDD extends AccessBDD {
      * @return int|null 1 si succès, null si erreur
      */
     private function deleteLivre(?array $champs) : ?int {
-        if (empty($champs)) {
-            return null;
-        }
-        $id = $champs['id'] ?? null;
-        if (is_null($id)) {
-            return null;
-        }
-        $param = ['id' => $id];
-        $result = $this->conn->queryBDD("select count(*) as nb from exemplaire where id=:id;", $param);
-        if ($result === null) {
-            return null;
-        }
-        if ((int)$result[0]['nb'] > 0) {
-            throw new \Exception("Suppression impossible : des exemplaires existent pour ce livre.");
-        }
-        $result = $this->conn->queryBDD("select count(*) as nb from commandedocument where idLivreDvd=:id;", $param);
-        if ($result === null) {
-            return null;
-        }
-        if ((int)$result[0]['nb'] > 0) {
-            throw new \Exception("Suppression impossible : des commandes existent pour ce livre.");
-        }
-        $this->conn->beginTransaction();
-        $ok = $this->deleteTuplesOneTable('livre',      $param) !== null
-           && $this->deleteTuplesOneTable('livres_dvd', $param) !== null
-           && $this->deleteTuplesOneTable('document',   $param) !== null;
-        if ($ok) {
-            $this->conn->commit();
-            return 1;
-        }
-        $this->conn->rollback();
-        return null;
+        return $this->deleteLivreDvd('livre', 'livre', $champs);
     }
 
     /**
@@ -744,6 +713,18 @@ class MyAccessBDD extends AccessBDD {
      * @return int|null 1 si succès, null si erreur
      */
     private function deleteDvd(?array $champs) : ?int {
+        return $this->deleteLivreDvd('dvd', 'DVD', $champs);
+    }
+
+    /**
+     * logique commune de suppression pour livre et dvd
+     * vérifie l'absence d'exemplaires et de commandes, puis supprime en cascade
+     * @param string $tableSpecifique 'livre' ou 'dvd'
+     * @param string $nomDocument libellé pour les messages d'erreur
+     * @param array|null $champs doit contenir 'id'
+     * @return int|null 1 si succès, null si erreur
+     */
+    private function deleteLivreDvd(string $tableSpecifique, string $nomDocument, ?array $champs) : ?int {
         if (empty($champs)) {
             return null;
         }
@@ -757,19 +738,19 @@ class MyAccessBDD extends AccessBDD {
             return null;
         }
         if ((int)$result[0]['nb'] > 0) {
-            throw new \Exception("Suppression impossible : des exemplaires existent pour ce DVD.");
+            throw new \Exception("Suppression impossible : des exemplaires existent pour ce $nomDocument.");
         }
         $result = $this->conn->queryBDD("select count(*) as nb from commandedocument where idLivreDvd=:id;", $param);
         if ($result === null) {
             return null;
         }
         if ((int)$result[0]['nb'] > 0) {
-            throw new \Exception("Suppression impossible : des commandes existent pour ce DVD.");
+            throw new \Exception("Suppression impossible : des commandes existent pour ce $nomDocument.");
         }
         $this->conn->beginTransaction();
-        $ok = $this->deleteTuplesOneTable('dvd',        $param) !== null
-           && $this->deleteTuplesOneTable('livres_dvd', $param) !== null
-           && $this->deleteTuplesOneTable('document',   $param) !== null;
+        $ok = $this->deleteTuplesOneTable($tableSpecifique, $param) !== null
+           && $this->deleteTuplesOneTable('livres_dvd',     $param) !== null
+           && $this->deleteTuplesOneTable('document',       $param) !== null;
         if ($ok) {
             $this->conn->commit();
             return 1;
@@ -875,15 +856,15 @@ class MyAccessBDD extends AccessBDD {
      * @param array|null $champs
      * @return array|null
      */
-    private function selectExemplairesRevue(?array $champs) : ?array{
-        if(empty($champs)){
+    private function selectExemplairesRevue(?array $champs) : ?array {
+        if (empty($champs)) {
             return null;
         }
-        if(!array_key_exists('id', $champs)){
+        if (!array_key_exists('id', $champs)) {
             return null;
         }
-        $champNecessaire['id'] = $champs['id'];
-        $requete = "Select e.id, e.numero, e.dateAchat, e.photo, e.idEtat ";
+        $champNecessaire = ['id' => $champs['id']];
+        $requete = "select e.id, e.numero, e.dateAchat, e.photo, e.idEtat ";
         $requete .= "from exemplaire e join document d on e.id=d.id ";
         $requete .= "where e.id = :id ";
         $requete .= "order by e.dateAchat DESC";
