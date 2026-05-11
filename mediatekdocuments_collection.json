@@ -1,0 +1,807 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Mediatek Documents API",
+    "description": "Collection complète de l'API REST Mediatek86 — missions 1 à 5.\nAuth Basic : admin / adminpwd\nVariable : base_url = http://localhost:8889/rest_mediatekdocuments",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{auth_user}}", "type": "string" },
+      { "key": "password", "value": "{{auth_pw}}",   "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url",  "value": "http://localhost:8889/rest_mediatekdocuments" },
+    { "key": "auth_user", "value": "admin" },
+    { "key": "auth_pw",   "value": "adminpwd" }
+  ],
+  "item": [
+
+    {
+      "name": "Livres",
+      "item": [
+
+        {
+          "name": "GET tous les livres",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('Structure JSON valide', () => {",
+            "  pm.expect(j).to.have.property('code');",
+            "  pm.expect(j).to.have.property('message');",
+            "  pm.expect(j).to.have.property('result');",
+            "});",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result est un tableau non vide', () => {",
+            "  pm.expect(j.result).to.be.an('array').and.not.empty;",
+            "});"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/livre", "host": ["{{base_url}}"], "path": ["livre"] }
+          }
+        },
+
+        {
+          "name": "POST nouveau livre (succès)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result = 1', () => pm.expect(j.result).to.eql(1));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"id\":\"PM001\",\"titre\":\"Livre Postman Test\",\"image\":\"\",\"idRayon\":\"LV001\",\"idPublic\":\"00002\",\"idGenre\":\"10002\",\"ISBN\":\"9780000000001\",\"auteur\":\"Auteur Postman\",\"collection\":\"\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/livre", "host": ["{{base_url}}"], "path": ["livre"] }
+          }
+        },
+
+        {
+          "name": "POST livre sans champs (erreur)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": { "mode": "urlencoded", "urlencoded": [] },
+            "url": { "raw": "{{base_url}}/livre", "host": ["{{base_url}}"], "path": ["livre"] }
+          }
+        },
+
+        {
+          "name": "PUT modifier livre PM001",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"titre\":\"Livre Postman Modifié\",\"auteur\":\"Auteur Modifié\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/livre/PM001", "host": ["{{base_url}}"], "path": ["livre", "PM001"] }
+          }
+        },
+
+        {
+          "name": "DELETE livre PM001 (succès)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/livre/{\"id\":\"PM001\"}", "host": ["{{base_url}}"], "path": ["livre", "{\"id\":\"PM001\"}"] }
+          }
+        },
+
+        {
+          "name": "DELETE livre avec exemplaires (erreur métier)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));",
+            "pm.test('message contient exemplaires', () => pm.expect(j.message).to.include('exemplaires'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/livre/{\"id\":\"00001\"}",
+              "host": ["{{base_url}}"],
+              "path": ["livre", "{\"id\":\"00001\"}"],
+              "description": "00001 n'a pas d'exemplaires dans les données initiales — utiliser un livre qui en possède ou adapter l'ID."
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "DVDs",
+      "item": [
+
+        {
+          "name": "GET tous les DVDs",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result tableau non vide', () => pm.expect(j.result).to.be.an('array').and.not.empty);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/dvd", "host": ["{{base_url}}"], "path": ["dvd"] }
+          }
+        },
+
+        {
+          "name": "POST nouveau DVD (succès)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('code = 200', () => pm.expect(pm.response.json().code).to.eql(200));",
+            "pm.test('result = 1', () => pm.expect(pm.response.json().result).to.eql(1));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"id\":\"PM002\",\"titre\":\"DVD Postman Test\",\"image\":\"\",\"idRayon\":\"DF001\",\"idPublic\":\"00003\",\"idGenre\":\"10002\",\"synopsis\":\"Synopsis test\",\"realisateur\":\"Réalisateur Test\",\"duree\":90}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/dvd", "host": ["{{base_url}}"], "path": ["dvd"] }
+          }
+        },
+
+        {
+          "name": "PUT modifier DVD PM002",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('code = 200', () => pm.expect(pm.response.json().code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"titre\":\"DVD Postman Modifié\",\"realisateur\":\"Nouveau Réalisateur\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/dvd/PM002", "host": ["{{base_url}}"], "path": ["dvd", "PM002"] }
+          }
+        },
+
+        {
+          "name": "DELETE DVD PM002 (succès)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('code = 200', () => pm.expect(pm.response.json().code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/dvd/{\"id\":\"PM002\"}", "host": ["{{base_url}}"], "path": ["dvd", "{\"id\":\"PM002\"}"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Revues",
+      "item": [
+
+        {
+          "name": "GET toutes les revues",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result tableau non vide', () => pm.expect(j.result).to.be.an('array').and.not.empty);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/revue", "host": ["{{base_url}}"], "path": ["revue"] }
+          }
+        },
+
+        {
+          "name": "POST nouvelle revue (succès)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('code = 200', () => pm.expect(pm.response.json().code).to.eql(200));",
+            "pm.test('result = 1', () => pm.expect(pm.response.json().result).to.eql(1));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"id\":\"PM003\",\"titre\":\"Revue Postman Test\",\"image\":\"\",\"idRayon\":\"PR001\",\"idPublic\":\"00002\",\"idGenre\":\"10015\",\"periodicite\":\"MS\",\"delaiMiseADispo\":30}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/revue", "host": ["{{base_url}}"], "path": ["revue"] }
+          }
+        },
+
+        {
+          "name": "PUT modifier revue PM003",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('code = 200', () => pm.expect(pm.response.json().code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"titre\":\"Revue Postman Modifiée\",\"periodicite\":\"QT\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/revue/PM003", "host": ["{{base_url}}"], "path": ["revue", "PM003"] }
+          }
+        },
+
+        {
+          "name": "DELETE revue PM003 (succès)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('code = 200', () => pm.expect(pm.response.json().code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/revue/{\"id\":\"PM003\"}", "host": ["{{base_url}}"], "path": ["revue", "{\"id\":\"PM003\"}"] }
+          }
+        },
+
+        {
+          "name": "DELETE revue avec exemplaires (erreur métier)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));",
+            "pm.test('message exemplaires', () => pm.expect(j.message).to.include('exemplaires'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/revue/{\"id\":\"10011\"}", "host": ["{{base_url}}"], "path": ["revue", "{\"id\":\"10011\"}"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Exemplaires",
+      "item": [
+
+        {
+          "name": "GET exemplaires d'une revue (10007)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result tableau non vide', () => pm.expect(j.result).to.be.an('array').and.not.empty);",
+            "pm.test('champ numero présent', () => pm.expect(j.result[0]).to.have.property('numero'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/exemplaire/{\"id\":\"10007\"}", "host": ["{{base_url}}"], "path": ["exemplaire", "{\"id\":\"10007\"}"] }
+          }
+        },
+
+        {
+          "name": "GET exemplaire sans filtre (erreur — id obligatoire)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/exemplaire", "host": ["{{base_url}}"], "path": ["exemplaire"] }
+          }
+        },
+
+        {
+          "name": "PUT état exemplaire valide (10007 / num 3237 → usagé)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"numero\":3237,\"idEtat\":\"00002\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/exemplaire/10007", "host": ["{{base_url}}"], "path": ["exemplaire", "10007"] }
+          }
+        },
+
+        {
+          "name": "PUT état invalide (erreur métier)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));",
+            "pm.test('message État invalide', () => pm.expect(j.message).to.include('État invalide'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"numero\":3237,\"idEtat\":\"99999\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/exemplaire/10007", "host": ["{{base_url}}"], "path": ["exemplaire", "10007"] }
+          }
+        },
+
+        {
+          "name": "PUT exemplaire introuvable (erreur métier)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));",
+            "pm.test('message introuvable', () => pm.expect(j.message).to.include('introuvable'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"numero\":99999,\"idEtat\":\"00001\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/exemplaire/ZZZZZ", "host": ["{{base_url}}"], "path": ["exemplaire", "ZZZZZ"] }
+          }
+        },
+
+        {
+          "name": "DELETE exemplaire (10007 / num 3237)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/exemplaire/{\"id\":\"10007\",\"numero\":3237}", "host": ["{{base_url}}"], "path": ["exemplaire", "{\"id\":\"10007\",\"numero\":3237}"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Commandes Documents",
+      "item": [
+
+        {
+          "name": "GET toutes les commandes documents",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result est un tableau', () => pm.expect(j.result).to.be.an('array'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/commandedocument", "host": ["{{base_url}}"], "path": ["commandedocument"] }
+          }
+        },
+
+        {
+          "name": "GET commandes d'un livre (00001)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result tableau', () => pm.expect(j.result).to.be.an('array'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/commandedocument/{\"idLivreDvd\":\"00001\"}", "host": ["{{base_url}}"], "path": ["commandedocument", "{\"idLivreDvd\":\"00001\"}"] }
+          }
+        },
+
+        {
+          "name": "POST nouvelle commande (statut 'en cours' injecté)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result = 1', () => pm.expect(j.result).to.eql(1));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"id\":\"PMCMD\",\"dateCommande\":\"2026-05-11\",\"montant\":29.99,\"nbExemplaire\":3,\"idLivreDvd\":\"00001\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/commandedocument", "host": ["{{base_url}}"], "path": ["commandedocument"] }
+          }
+        },
+
+        {
+          "name": "PUT statut commande → relancée",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"statut\":\"relancée\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/commandedocument/PMCMD", "host": ["{{base_url}}"], "path": ["commandedocument", "PMCMD"] }
+          }
+        },
+
+        {
+          "name": "PUT statut commande → livrée (génère exemplaires)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"statut\":\"livrée\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/commandedocument/PMCMD", "host": ["{{base_url}}"], "path": ["commandedocument", "PMCMD"] }
+          }
+        },
+
+        {
+          "name": "DELETE commande avec statut 'livrée' (erreur métier)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));",
+            "pm.test('message Suppression impossible', () => pm.expect(j.message).to.include('Suppression impossible'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/commandedocument/{\"id\":\"PMCMD\"}", "host": ["{{base_url}}"], "path": ["commandedocument", "{\"id\":\"PMCMD\"}"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Abonnements",
+      "item": [
+
+        {
+          "name": "GET tous les abonnements",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result tableau', () => pm.expect(j.result).to.be.an('array'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/abonnement", "host": ["{{base_url}}"], "path": ["abonnement"] }
+          }
+        },
+
+        {
+          "name": "GET abonnements d'une revue (10001)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result tableau', () => pm.expect(j.result).to.be.an('array'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/abonnement/{\"idRevue\":\"10001\"}", "host": ["{{base_url}}"], "path": ["abonnement", "{\"idRevue\":\"10001\"}"] }
+          }
+        },
+
+        {
+          "name": "GET abonnements expirant dans 30 jours",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result tableau', () => pm.expect(j.result).to.be.an('array'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/abonnement/{\"expireBientot\":1}", "host": ["{{base_url}}"], "path": ["abonnement", "{\"expireBientot\":1}"] }
+          }
+        },
+
+        {
+          "name": "POST nouvel abonnement (succès)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result = 1', () => pm.expect(j.result).to.eql(1));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [{
+                "key": "champs",
+                "value": "{\"id\":\"PMABO\",\"dateCommande\":\"2026-05-11\",\"montant\":55.00,\"dateFinAbonnement\":\"2027-05-11\",\"idRevue\":\"10001\"}",
+                "type": "text"
+              }]
+            },
+            "url": { "raw": "{{base_url}}/abonnement", "host": ["{{base_url}}"], "path": ["abonnement"] }
+          }
+        },
+
+        {
+          "name": "DELETE abonnement PMABO (succès — aucune parution pour 10001)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{base_url}}/abonnement/{\"id\":\"PMABO\"}", "host": ["{{base_url}}"], "path": ["abonnement", "{\"id\":\"PMABO\"}"] }
+          }
+        },
+
+        {
+          "name": "DELETE abonnement avec parutions (erreur métier)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));",
+            "pm.test('message parutions', () => pm.expect(j.message).to.include('parutions'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/abonnement/{\"id\":\"PMABO\"}",
+              "host": ["{{base_url}}"],
+              "path": ["abonnement", "{\"id\":\"PMABO\"}"],
+              "description": "Adapter avec l'id d'un abonnement dont la revue possède des exemplaires (ex. 10007, 10011)."
+            }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Tables simples",
+      "item": [
+
+        {
+          "name": "GET genres (trié par libelle)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result non vide', () => pm.expect(j.result).to.be.an('array').and.not.empty);",
+            "pm.test('champ id présent',      () => pm.expect(j.result[0]).to.have.property('id'));",
+            "pm.test('champ libelle présent', () => pm.expect(j.result[0]).to.have.property('libelle'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/genre", "host": ["{{base_url}}"], "path": ["genre"] }
+          }
+        },
+
+        {
+          "name": "GET publics",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result non vide', () => pm.expect(j.result).to.not.be.empty);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/public", "host": ["{{base_url}}"], "path": ["public"] }
+          }
+        },
+
+        {
+          "name": "GET rayons",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/rayon", "host": ["{{base_url}}"], "path": ["rayon"] }
+          }
+        },
+
+        {
+          "name": "GET états",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/etat", "host": ["{{base_url}}"], "path": ["etat"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Authentification Employé",
+      "item": [
+
+        {
+          "name": "GET employe — identifiants valides",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 200', () => pm.expect(j.code).to.eql(200));",
+            "pm.test('result contient service', () => pm.expect(j.result[0]).to.have.property('service'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employe/{\"login\":\"admin\",\"mdp\":\"admin\"}",
+              "host": ["{{base_url}}"],
+              "path": ["employe", "{\"login\":\"admin\",\"mdp\":\"admin\"}"],
+              "description": "Adapter login/mdp selon les données de la table employe."
+            }
+          }
+        },
+
+        {
+          "name": "GET employe — identifiants invalides (erreur métier)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));",
+            "pm.test('message Identifiants incorrects', () => pm.expect(j.message).to.include('Identifiants incorrects'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/employe/{\"login\":\"inexistant\",\"mdp\":\"mauvais\"}",
+              "host": ["{{base_url}}"],
+              "path": ["employe", "{\"login\":\"inexistant\",\"mdp\":\"mauvais\"}"]
+            }
+          }
+        },
+
+        {
+          "name": "GET employe sans champs (erreur)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 400', () => pm.expect(j.code).to.eql(400));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/employe", "host": ["{{base_url}}"], "path": ["employe"] }
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Authentification API (401)",
+      "item": [
+
+        {
+          "name": "GET livre sans authentification (401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const j = pm.response.json();",
+            "pm.test('code = 401', () => pm.expect(j.code).to.eql(401));",
+            "pm.test('message authentification', () => pm.expect(j.message).to.include('authentification'));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/livre", "host": ["{{base_url}}"], "path": ["livre"] }
+          }
+        },
+
+        {
+          "name": "GET livre avec mauvais mot de passe (401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const j = pm.response.json();",
+            "pm.test('code = 401', () => pm.expect(j.code).to.eql(401));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin",     "type": "string" },
+                { "key": "password", "value": "mauvais_pw", "type": "string" }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/livre", "host": ["{{base_url}}"], "path": ["livre"] }
+          }
+        }
+
+      ]
+    }
+
+  ]
+}
