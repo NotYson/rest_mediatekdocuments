@@ -55,7 +55,25 @@ class Controle{
             'message' => $message,
             'result' => $result
         );
+        $this->log($code, $message);
         echo json_encode($retour, JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * écrit une entrée dans le fichier de log défini par LOG_PATH
+     * chaque entrée comporte un horodatage, le code HTTP et le message
+     * sans effet si LOG_PATH n'est pas défini
+     * @param int $code code standard HTTP
+     * @param string $message message correspondant au code
+     */
+    private function log(int $code, string $message) : void {
+        $logPath = $_ENV['LOG_PATH'] ?? '';
+        if (empty($logPath)) {
+            return;
+        }
+        $timestamp = date('Y-m-d H:i:s');
+        $entry = "[$timestamp] $code $message" . PHP_EOL;
+        file_put_contents($logPath, $entry, FILE_APPEND | LOCK_EX);
     }
     
     /**
