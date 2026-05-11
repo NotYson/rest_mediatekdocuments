@@ -1,10 +1,10 @@
 <?php
-/*
- * Index.php : point d'entrée de l'API
- * - contrôle l'authentification
- * - Récupère les variables envoyées (dans l'URL ou le body)
- * - récupère la méthode d'envoi HTTP (GET, POST, PUT, DELETE)
- * - demande au contrôleur de gérer la demande
+/**
+ * Point d'entrée de l'API REST Mediatek86.
+ * Contrôle l'authentification, récupère les variables de l'URL et
+ * délègue le traitement au contrôleur.
+ *
+ * @package MediateK86
  */
 include_once ("Url.php");
 include_once("Controle.php");

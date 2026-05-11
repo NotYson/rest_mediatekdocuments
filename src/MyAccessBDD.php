@@ -28,8 +28,7 @@ class MyAccessBDD extends AccessBDD {
      * @param string $table
      * @param array|null $champs nom et valeur de chaque champ
      * @return array|null tuples du résultat de la requête ou null si erreur
-     * @override
-     */	
+     */
     protected function traitementSelect(string $table, ?array $champs) : ?array{
         switch($table){  
             case "livre" :
@@ -65,8 +64,7 @@ class MyAccessBDD extends AccessBDD {
      * @param string $table
      * @param array|null $champs nom et valeur de chaque champ
      * @return int|null nombre de tuples ajoutés ou null si erreur
-     * @override
-     */	
+     */
     protected function traitementInsert(string $table, ?array $champs) : ?int{
         switch($table){
             case "livre" :
@@ -93,8 +91,7 @@ class MyAccessBDD extends AccessBDD {
      * @param string|null $id
      * @param array|null $champs nom et valeur de chaque champ
      * @return int|null nombre de tuples modifiés ou null si erreur
-     * @override
-     */	
+     */
     protected function traitementUpdate(string $table, ?string $id, ?array $champs) : ?int{
         switch($table){
             case "livre" :
@@ -120,8 +117,7 @@ class MyAccessBDD extends AccessBDD {
      * @param string $table
      * @param array|null $champs nom et valeur de chaque champ
      * @return int|null nombre de tuples supprimés ou null si erreur
-     * @override
-     */	
+     */
     protected function traitementDelete(string $table, ?array $champs) : ?int{
         switch($table){
             case "livre" :
@@ -197,7 +193,7 @@ class MyAccessBDD extends AccessBDD {
     /**
      * demande de modification (update) d'un tuple dans une table
      * @param string $table
-     * @param string\null $id
+     * @param string|null $id
      * @param array|null $champs 
      * @return int|null nombre de tuples modifiés (0 ou 1) ou null si erreur
      */	
@@ -555,6 +551,7 @@ class MyAccessBDD extends AccessBDD {
      * lève une exception si les identifiants sont incorrects ou inconnus
      * @param array|null $champs doit contenir 'login' et 'mdp'
      * @return array|null tableau avec login et service, null si paramètres manquants
+     * @throws \Exception si les identifiants sont incorrects ou inconnus
      */
     private function connecterEmploye(?array $champs) : ?array {
         if (empty($champs)) {
@@ -629,6 +626,7 @@ class MyAccessBDD extends AccessBDD {
      * lève une exception si des parutions (exemplaires) existent pour la revue concernée
      * @param array|null $champs doit contenir 'id'
      * @return int|null 1 si succès, null si erreur
+     * @throws \Exception si des parutions existent pour la revue liée à cet abonnement
      */
     private function deleteAbonnement(?array $champs) : ?int {
         if (empty($champs)) {
@@ -667,6 +665,7 @@ class MyAccessBDD extends AccessBDD {
      * lève une exception si le statut n'est pas "en cours" ou "relancée"
      * @param array|null $champs doit contenir 'id'
      * @return int|null 1 si succès, null si erreur
+     * @throws \Exception si le statut de la commande interdit la suppression
      */
     private function deleteCommande(?array $champs) : ?int {
         if (empty($champs)) {
@@ -701,6 +700,7 @@ class MyAccessBDD extends AccessBDD {
      * lève une exception si des exemplaires ou commandes existent
      * @param array|null $champs doit contenir 'id'
      * @return int|null 1 si succès, null si erreur
+     * @throws \Exception si des exemplaires ou commandes existent pour ce livre
      */
     private function deleteLivre(?array $champs) : ?int {
         return $this->deleteLivreDvd('livre', 'livre', $champs);
@@ -711,6 +711,7 @@ class MyAccessBDD extends AccessBDD {
      * lève une exception si des exemplaires ou commandes existent
      * @param array|null $champs doit contenir 'id'
      * @return int|null 1 si succès, null si erreur
+     * @throws \Exception si des exemplaires ou commandes existent pour ce DVD
      */
     private function deleteDvd(?array $champs) : ?int {
         return $this->deleteLivreDvd('dvd', 'DVD', $champs);
@@ -723,6 +724,7 @@ class MyAccessBDD extends AccessBDD {
      * @param string $nomDocument libellé pour les messages d'erreur
      * @param array|null $champs doit contenir 'id'
      * @return int|null 1 si succès, null si erreur
+     * @throws \Exception si des exemplaires ou commandes existent pour ce document
      */
     private function deleteLivreDvd(string $tableSpecifique, string $nomDocument, ?array $champs) : ?int {
         if (empty($champs)) {
@@ -764,6 +766,7 @@ class MyAccessBDD extends AccessBDD {
      * lève une exception si des exemplaires ou abonnements existent
      * @param array|null $champs doit contenir 'id'
      * @return int|null 1 si succès, null si erreur
+     * @throws \Exception si des exemplaires ou abonnements existent pour cette revue
      */
     private function deleteRevue(?array $champs) : ?int {
         if (empty($champs)) {
@@ -805,6 +808,7 @@ class MyAccessBDD extends AccessBDD {
      * @param string|null $id id du document (livre, dvd ou revue)
      * @param array|null $champs doit contenir 'numero' et 'idEtat'
      * @return int|null nombre de lignes modifiées ou null si erreur
+     * @throws \Exception si l'état est invalide ou si l'exemplaire est introuvable
      */
     private function updateEtatExemplaire(?string $id, ?array $champs) : ?int {
         if (empty($champs) || is_null($id)) {
@@ -853,8 +857,8 @@ class MyAccessBDD extends AccessBDD {
 
     /**
      * récupère tous les exemplaires d'une revue
-     * @param array|null $champs
-     * @return array|null
+     * @param array|null $champs doit contenir 'id' (identifiant de la revue)
+     * @return array|null liste des exemplaires triés par date d'achat décroissante, null si erreur
      */
     private function selectExemplairesRevue(?array $champs) : ?array {
         if (empty($champs)) {
