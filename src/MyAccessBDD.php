@@ -44,6 +44,8 @@ class MyAccessBDD extends AccessBDD {
                 return $this->selectCommandesLivreDvd($champs);
             case "abonnement" :
                 return $this->selectAbonnements($champs);
+            case "employe" :
+                return $this->connecterEmploye($champs);
             case "genre" :
             case "public" :
             case "rayon" :
@@ -545,6 +547,33 @@ class MyAccessBDD extends AccessBDD {
             }
         }
         return $nbExemplaire;
+    }
+
+    /**
+     * authentifie un employé par login et mot de passe
+     * retourne le login et le service si les identifiants sont corrects
+     * lève une exception si les identifiants sont incorrects ou inconnus
+     * @param array|null $champs doit contenir 'login' et 'mdp'
+     * @return array|null tableau avec login et service, null si paramètres manquants
+     */
+    private function connecterEmploye(?array $champs) : ?array {
+        if (empty($champs)) {
+            return null;
+        }
+        $login = $champs['login'] ?? null;
+        $mdp   = $champs['mdp']   ?? null;
+        if (is_null($login) || is_null($mdp)) {
+            return null;
+        }
+        $requete = "select login, service from employe where login=:login and mdp=:mdp;";
+        $result  = $this->conn->queryBDD($requete, ['login' => $login, 'mdp' => $mdp]);
+        if ($result === null) {
+            return null;
+        }
+        if (empty($result)) {
+            throw new \Exception("Identifiants incorrects : login ou mot de passe invalide.");
+        }
+        return $result;
     }
 
     /**
