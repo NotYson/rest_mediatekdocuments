@@ -21,11 +21,12 @@ class Connexion {
 
     /**
      * constructeur privé : connexion à la BDD
-     * @param string $login 
+     * @param string $login
      * @param string $pwd
      * @param string $bd
      * @param string $server
      * @param string $port
+     * @throws \Exception si la connexion PDO échoue
      */
     private function __construct(string $login, string $pwd, string $bd, string $server, string $port){
         try {
@@ -44,6 +45,7 @@ class Connexion {
      * @param string $server
      * @param string $port
      * @return Connexion instance unique de la classe
+     * @throws \Exception si la connexion PDO échoue à la première instanciation
      */
     public static function getInstance(string $login, string $pwd, string $bd, string $server, string $port) : Connexion{
         if(self::$instance === null){
@@ -118,6 +120,7 @@ class Connexion {
      * @param string $requete
      * @param array|null $param
      * @return \PDOStatement requête préparée
+     * @throws \Exception si la préparation PDO échoue
      */
     private function prepareRequete(string $requete, ?array $param=null) : \PDOStatement{
         try{

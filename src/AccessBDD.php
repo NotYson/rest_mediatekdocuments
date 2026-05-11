@@ -15,8 +15,9 @@ abstract class AccessBDD {
     protected $conn = null;	
 
     /**
-     * constructeur : récupère les variables d'environnement 
+     * constructeur : récupère les variables d'environnement
      * et récupère l'instance de connexion à la BDD
+     * @throws \Exception si la connexion à la BDD échoue
      */
     protected function __construct(){
         try{
@@ -59,9 +60,37 @@ abstract class AccessBDD {
         }       
     }
 
+    /**
+     * traite une demande de sélection (GET)
+     * @param string $table
+     * @param array|null $champs
+     * @return array|null
+     */
     abstract protected function traitementSelect(string $table, ?array $champs) : ?array;
+
+    /**
+     * traite une demande d'insertion (POST)
+     * @param string $table
+     * @param array|null $champs
+     * @return int|null nombre de tuples insérés ou null si erreur
+     */
     abstract protected function traitementInsert(string $table, ?array $champs) : ?int;
+
+    /**
+     * traite une demande de modification (PUT)
+     * @param string $table
+     * @param string|null $id
+     * @param array|null $champs
+     * @return int|null nombre de tuples modifiés ou null si erreur
+     */
     abstract protected function traitementUpdate(string $table, ?string $id, ?array $champs) : ?int;
+
+    /**
+     * traite une demande de suppression (DELETE)
+     * @param string $table
+     * @param array|null $champs
+     * @return int|null nombre de tuples supprimés ou null si erreur
+     */
     abstract protected function traitementDelete(string $table, ?array $champs) : ?int;
 
 }
