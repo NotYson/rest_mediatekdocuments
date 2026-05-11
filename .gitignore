@@ -2,3 +2,4 @@
 /vendor/
 /src/.env
 /.phpdoc/
+/deploy/backup_config.bat
